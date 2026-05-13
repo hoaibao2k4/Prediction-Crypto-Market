@@ -20,7 +20,6 @@ import com.market.prediction.repository.UserRepository;
 import com.market.prediction.security.CustomUserDetails;
 import com.market.prediction.security.JwtService;
 import com.market.prediction.service.AuthenticationService;
-import com.market.prediction.service.UserService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -32,7 +31,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   private final AuthenticationManager authenticationManager;
   private final JwtService jwtService;
   private final StringRedisTemplate redisTemplate;
-  private final UserService userService;
   private final PasswordEncoder passwordEncoder;
 
   @Override
@@ -83,7 +81,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     if (refreshToken == null) {
       throw new BadCredentialsException("Refresh token is missing");
     }
-    User user = userService.getCurrentUser();
+    String username = jwtService.extractUsername(refreshToken);
+    User user = userRepository.findByUsername(username)
+        .orElseThrow(() -> new BadCredentialsException("Invalid refresh token"));
 
     CustomUserDetails customUserDetails = new CustomUserDetails(user);
 
