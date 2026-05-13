@@ -157,6 +157,7 @@ public class BinanceWebSocketServiceImpl implements BinanceWebSocketService {
 
     } catch (Exception e) {
       log.error("Failed to process Binance message: {}. Error: ", msg, e);
+      throw new BinanceProviderException("Could not process Binance message", e);
     }
   }
 
