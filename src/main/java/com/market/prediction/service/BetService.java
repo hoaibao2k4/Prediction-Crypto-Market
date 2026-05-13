@@ -1,6 +1,5 @@
 package com.market.prediction.service;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.market.prediction.dto.request.BetRequest;

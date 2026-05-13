@@ -38,7 +38,8 @@ public class RoundServiceImpl implements RoundService {
 
 	@Override
 	public RoundResponse getCurrentRound() {
-		return roundRepository.findFirstByOrderByCreatedAtDesc().map(roundMapper::toResponse).orElse(null);
+		return roundRepository.findFirstByOrderByCreatedAtDesc().map(roundMapper::toResponse)
+				.orElseThrow(() -> new ResourceNotFoundException("No active round found. Please wait for initialization."));
 	}
 
 	@Override
@@ -54,7 +55,8 @@ public class RoundServiceImpl implements RoundService {
 				currentRound.getId(), roundResult, Thread.currentThread().getName());
 
 		LocalDateTime settledAt = LocalDateTime.now();
-		int updated = roundRepository.settleRoundAtomically(currentRound.getId(), roundResult, RoundStatus.SETTLED, settledAt);
+		int updated = roundRepository.settleRoundAtomically(currentRound.getId(), roundResult, RoundStatus.SETTLED,
+				settledAt);
 
 		if (updated == 0) {
 			log.warn("Round {} already settled or invalid state. Skipping.", currentRound.getId());

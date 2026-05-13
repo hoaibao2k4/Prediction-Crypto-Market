@@ -9,6 +9,16 @@ CREATE TABLE users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+CREATE TABLE user_bet_limit (
+  limit_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  bet_date DATE NOT NULL,
+  limit_count INT NOT NULL DEFAULT 0, 
+  UNIQUE(user_id, bet_date), 
+  CHECK(limit_count <= 20),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 
 CREATE TABLE pairs (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,

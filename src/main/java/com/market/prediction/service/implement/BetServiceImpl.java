@@ -1,5 +1,8 @@
 package com.market.prediction.service.implement;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -14,10 +17,12 @@ import com.market.prediction.entity.User;
 import com.market.prediction.enums.BetStatus;
 import com.market.prediction.enums.RoundStatus;
 import com.market.prediction.exception.BadRequestException;
+import com.market.prediction.exception.BusinessException;
 import com.market.prediction.exception.ConflictResourceException;
 import com.market.prediction.mapper.BetMapper;
 import com.market.prediction.repository.BetRepository;
 import com.market.prediction.repository.RoundRepository;
+import com.market.prediction.repository.UserBetLimitRepository;
 import com.market.prediction.service.BetService;
 import com.market.prediction.service.UserService;
 
@@ -32,8 +37,12 @@ public class BetServiceImpl implements BetService {
 
     private final BetRepository betRepository;
     private final RoundRepository roundRepository;
+    private final UserBetLimitRepository userBetLimitRepository;
     private final BetMapper betMapper;
     private final UserService userService;
+
+    private static final int LIMITATION = 20;
+    private static final String ZONE = "Asia/Ho_Chi_Minh";
 
     @Override
     @Transactional
@@ -49,6 +58,16 @@ public class BetServiceImpl implements BetService {
             throw new ConflictResourceException("User has already bet");
         }
 
+        LocalDate today = LocalDate.now(ZoneId.of(ZONE));
+
+        userBetLimitRepository.ensureTodayQuotaRow(user.getId(), today);
+
+        int updateRows = userBetLimitRepository.incrementIfNotLimit(user.getId(), today, LIMITATION);
+
+        if (updateRows == 0) {
+            throw new BusinessException("Limited: You get limited 20 bets a day");
+        }
+
         Bet bet = Bet.builder()
                 .round(round)
                 .user(user)
@@ -62,7 +81,7 @@ public class BetServiceImpl implements BetService {
     public PageResponse<BetResponse> getBetHistory(Pageable pageable) {
         User user = userService.getCurrentUser();
         Page<Bet> betPage = betRepository.findByUser(user, pageable);
-        
+
         return PageResponse.<BetResponse>builder()
                 .content(betPage.getContent().stream().map(betMapper::toResponse).toList())
                 .totalElements(betPage.getTotalElements())
